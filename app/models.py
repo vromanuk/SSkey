@@ -3,7 +3,7 @@ import os
 import hashlib
 from sqlalchemy import Column, String, Integer, Date, LargeBinary
 
-from  base import Base
+from base import Base
 
 
 class User(Base):
@@ -36,6 +36,18 @@ class User(Base):
     def compare_hash(self, input_password):
         hash_input_password = __class__.hash_password(input_password, self.salt)
         return hash_input_password == self.userpass
+
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format"""
+        return {
+            'username': self.username,
+            'email': self.email,
+            'register_date': str(self.reg_date),
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'phone': self.phone
+        }
 
     def __init__(self, username, email, password, first_name, last_name, phone):
         self.username = username
