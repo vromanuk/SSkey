@@ -6,6 +6,9 @@ from sqlalchemy import Column, String, Integer, Date, LargeBinary, ForeignKey
 from sqlalchemy.orm import relationship
 
 from . import Base
+from . import Session
+
+session = Session()
 
 
 class User(Base):
@@ -36,9 +39,9 @@ class User(Base):
         return salt, iterations, hashed_password
 
     def compare_hash(self, input_password):
-        hash_input_password = __class__.hash_password(input_password,
-                                                      self.salt)
-        return hash_input_password == self.userpass
+        hash_input_password = User.hash_password(input_password,
+                                                 self.salt)
+        return hash_input_password[2] == self.userpass
 
     @property
     def serialize(self):
@@ -96,12 +99,13 @@ class Password(Base):
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
-            'username': self.username,
-            'email': self.email,
-            'register_date': str(self.reg_date),
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'phone': self.phone
+            'pass_id': self.pass_id,
+            'url': self.url,
+            'title': self.title,
+            'login': str(self.login),
+            'password': self.password,
+            'comment': self.comment,
+
         }
 
     def crypt_and_save_password(self, raw_password):
@@ -120,3 +124,18 @@ class Password(Base):
         self.url = url
         self.title = title
         self.comment = comment
+
+
+class RevokedTokenModel(Base):
+    __tablename__ = "revoked_tokens"
+    id = Column('id', Integer, primary_key=True)
+    jti = Column('jti', String(120))
+
+    def add(self):
+        session.add(self)
+        session.commit()
+
+    @classmethod
+    def is_jti_blacklisted(cls, jti):
+        query = session.query(cls).filter(jti=jti).first()
+        return bool(query)
