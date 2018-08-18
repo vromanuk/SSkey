@@ -1,17 +1,14 @@
 from marshmallow import Schema, fields, ValidationError, pre_load
 
 
-# TODO add validation on other pages: resources, models
 class UserSchema(Schema):
-    id = fields.Integer(dump_only=True)
-    username = fields.String(required=True)
+    id = fields.Integer()
     email = fields.Email(required=True)
-    userpass = fields.String(required=True)
-    salt = fields.String()
-    reg_date = fields.DateTime()
+    username = fields.String(required=True)
+    password = fields.String(required=True, load_only=True)
     first_name = fields.String()
     last_name = fields.String()
-    phone = fields.Integer()
+    phone = fields.String()
 
 
 class PasswordSchema(Schema):

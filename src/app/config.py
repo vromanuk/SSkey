@@ -1,6 +1,9 @@
 import os
 
+from dotenv import load_dotenv
+
 basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir, '.env'))
 
 
 class Config:
@@ -14,6 +17,12 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    EMAIL = 'testuser@gmail.com'
+    USERNAME = 'testuser'
+    PASSWORD = 'testpassword'
+    FIRST_NAME = 'test name'
+    LAST_NAME = 'test lastname'
+    PHONE = '911'
 
 
 class ProductionConfig(Config):

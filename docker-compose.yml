@@ -2,9 +2,12 @@ version: '3'
 
 services:
   app:
-    build: .
+    build: ./src
+    container_name: sskey_app
     links:
       - db
+    env_file:
+      - sskey.env
     ports:
       - "5000:5000"
     depends_on:
@@ -12,7 +15,9 @@ services:
 
   db:
     image: postgres:10.4
+    container_name: sskey_db
     restart: always
-    env_file: .env
+    env_file:
+      - sskey.env
     ports:
       - "5432:5432"

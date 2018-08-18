@@ -1,11 +1,17 @@
+import os
+
 from psycopg2 import connect
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from dotenv import load_dotenv
 
-user = 'postgres'
+basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir, '.env'))
+
 new_user = 'sskey'
-host = 'localhost'
-password = 'postgres'
-dbname = "db_sskey"
+user = os.environ.get('POSTGRES_USER')
+host = os.environ.get('POSTGRES_HOST')
+password = os.environ.get('POSTGRES_PASS')
+dbname = os.environ.get('POSTGRES_NAME')
 SQL_create_db = "CREATE DATABASE {0};".format(dbname)
 SQL_create_user = "CREATE USER sskey WITH password 'sskey';"
 SQL_cteate_table_users = ("CREATE TABLE users ( \n"
@@ -28,12 +34,22 @@ SQL_cteate_table_passwords = ("CREATE TABLE passwords ( \n"
                               "                    url varchar, \n"
                               "                    title varchar,\n"
                               "                    login varchar NOT NULL, \n"
-                              "                    pass varchar NOT NULL, \n"
+                              "                    pass bytea NOT NULL, \n"
                               "                    comment TEXT, \n"
                               "                    CONSTRAINT passwords_pk PRIMARY KEY (pass_id) \n"
                               "                    ) WITH OIDS;")
+SQL_create_table_session_objects = ("CREATE TABLE session_objects ( \n"
+                                    "                    id serial NOT NULL, \n"
+                                    "                    user_id serial NOT NULL, \n"
+                                    "                    token varchar NOT NULL, \n"
+                                    "                    login_time TIMESTAMP NOT NULL, \n"
+                                    "                    time_out_value integer NOT NULL, \n"
+                                    "                    CONSTRAINT session_objects_pk PRIMARY KEY (id) \n"
+                                    "                    ) WITH OIDS;")
 
-SQL_alter_table = "ALTER TABLE passwords ADD CONSTRAINT passwords_fk0 FOREIGN KEY (user_id) REFERENCES users(id);"
+SQL_alter_table_passwords = "ALTER TABLE passwords ADD CONSTRAINT passwords_fk0 FOREIGN KEY (user_id) REFERENCES users(id);"
+SQL_alter_table_session_obj = "ALTER TABLE session_objects ADD CONSTRAINT " \
+                              "session_objects_fk0 FOREIGN KEY (user_id) REFERENCES users(id);"
 
 
 def create_user():
@@ -82,7 +98,9 @@ def create_tables():
         cur = con.cursor()
         cur.execute(SQL_cteate_table_users)
         cur.execute(SQL_cteate_table_passwords)
-        cur.execute(SQL_alter_table)
+        cur.execute(SQL_create_table_session_objects)
+        cur.execute(SQL_alter_table_passwords)
+        cur.execute(SQL_alter_table_session_obj)
         print(
             "CREATE TABLES: success!!! Tables created in database: {0};".format(
                 dbname))
@@ -126,13 +144,13 @@ def insert_data_in_db():
         con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cur = con.cursor()
         cur.execute(
-            "INSERT INTO users VALUES (103, 'test', 'test', 'test@test.com', '380501234567', 'test', 'test', '2018-01-01 12:00:00', '2018-01-01 12:00:00', 'ffffffff');")
+            "INSERT INTO users VALUES (150 'test', 'test', 'test@test.com', '380501234567', 'test', 'test', '2018-01-01 12:00:00', '2018-01-01 12:00:00', 'ffffffff');")
         cur.execute(
-            "INSERT INTO passwords VALUES (DEFAULT, 103, 'www', 'title', 'login', 'pass', 'comment');")
+            "INSERT INTO passwords VALUES (DEFAULT, 34, 'www', 'title', 'login', 'pass', 'comment');")
         cur.execute(
-            "INSERT INTO users VALUES (104, 'test2', 'test2', 'test@test.com', '380501112233', 'test2', 'test2', '2018-02-02 13:00:00', '2018-02-02 13:00:00', 'ff00ff00');")
+            "INSERT INTO users VALUES (151, 'test2', 'test2', 'test@test.com', '380501112233', 'test2', 'test2', '2018-02-02 13:00:00', '2018-02-02 13:00:00', 'ff00ff00');")
         cur.execute(
-            "INSERT INTO passwords VALUES (DEFAULT, 104, 'www', 'title', 'login', 'pass', 'comment2');")
+            "INSERT INTO passwords VALUES (DEFAULT, 35, 'www', 'title', 'login', 'pass', 'comment2');")
         print(
             "INSERT DATA IN DATABASE: success!!! Test data inserted successfully in database: {0};".format(
                 dbname))
@@ -150,4 +168,4 @@ if __name__ == "__main__":
     create_user()
     create_db()
     create_tables()
-    insert_data_in_db()  # Uncomment function if you need insert test records in tables 'user' and 'passwords' in databae
+    # insert_data_in_db()  # Uncomment function if you need insert test records in tables 'user' and 'passwords' in databae

@@ -1,60 +1,119 @@
-import os
-import tempfile
-
-from src.app import app
+import json
 import pytest
+
+from ..app.models import Password
+from src.app import app
+from src.app import config
+from src.app.base import Base, engine
 
 
 @pytest.fixture
 def client():
-    db_fd, app.config["DATABASE"] = tempfile.mkstemp()
-    app.config["TESTING"] = True
+    app.config.from_object(config['testing'])
     client = app.test_client()
 
-    # with app.app_context():
-    #     app.init_db()
+    Base.metadata.create_all(engine)
 
     yield client
 
-    os.close(db_fd)
-    os.unlink(app.config["DATABASE"])
+
+def register(client, email, username, password, first_name, last_name, phone):
+    return client.post('/register', json=dict(
+        email=email,
+        username=username,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone
+    ), follow_redirects=True)
 
 
-def test_smoke(client):
-    rv = client.get("/smoke")
-    assert b"Missing Authorization Header" in rv.data
+def put_user(client, email, username, first_name, last_name, phone, user_id):
+    return client.put('/users/' + str(user_id), json=dict(
+        email=email,
+        username=username,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone
+    ), follow_redirects=True)
+
+
+def get_user_by_username(client, username):
+    return client.get('/users/' + username,
+                      follow_redirects=True)
+
+
+def login(client, email, password):
+    return client.post('/login', json=dict(
+        email=email,
+        password=password
+    ), follow_redirects=True)
+
+
+def smoke(client):
+    return client.get('/smoke', follow_redirects=True)
+
+
+def logout(client):
+    return client.get('/logout', follow_redirects=True)
 
 
 def test_home_page(client):
-    rv = client.get("/")
-    assert b"Home Page" in rv.data
-#     # def test_create_user_valid(self):
-#     #     response = requests.post('http://localhost:5000/users', data={
-#     #         'username': 'Seriy', 'email': 'serg@mail.ru', 'userpass': 'password123',
-#     #         'first_name': 'Sergey', 'last_name': 'Petrov', 'phone': '555-66-777'
-#     #     })
-#     #     self.assertEqual(response.json(), {'message': 'USER Seriy REGISTRATION SUCCESSFUL'})
-#     #     self.assertEqual(response.status_code, 200)
-#     #
-#     # def test_get_user_valid(self):
-#     #     response = requests.get('/users?username=Seriy')
-#     #     requests.delete('http://localhost:5000/user', data={
-#     #         'username': 'Seriy'
-#     #     })
-#     #     self.assertEqual(response.json()['users'][0]['username'], 'Seriy')
-#     #     self.assertEqual(response.json()['users'][0]['email'], 'serg@mail.ru')
-#     #     self.assertEqual(response.json()['users'][0]['last_name'], 'Petrov')
-#     #     self.assertEqual(response.status_code, 200)
-#     #
-#     # def test_create_user_empty_required(self):
-#     #     response = requests.post('/users')
-#     #     self.assertEqual(response.json(), {'message': "REQUIRED DATA NOT VALID OR BLANK"})
-#     #     self.assertEqual(response.status_code, 400)
-#     #
-#     # def test_get_not_exist_user(self):
-#     #     response = requests.get('/users?username=vasiliy_petrovich7872')
-#     #     self.assertEqual(response.json()['users'], [])
-#     #     self.assertEqual(response.status_code, 200)
-#
-#     def tearDown(self):
-#         pass
+    rv = client.get('/home')
+    assert b'This is a Home Page' in rv.data
+
+
+def test_smoke_page(client):
+    rv = smoke(client)
+    assert b'You are not allowed to use this resource without logging in!' in rv.data
+
+
+def test_register(client):
+    """Make sure register works."""
+    rv = register(client, app.config['EMAIL'], app.config['USERNAME'], app.config['PASSWORD'], app.config["FIRST_NAME"],
+                  app.config['LAST_NAME'], app.config['PHONE'])
+    assert b'testuser' in rv.data
+
+
+def test_get_user_by_username(client):
+    login(client, app.config['EMAIL'], app.config['PASSWORD'])
+    rv = get_user_by_username(client, app.config["USERNAME"])
+    assert bytes(app.config['EMAIL'], encoding='utf-8') in rv.data
+    assert bytes(app.config['USERNAME'], encoding='utf-8') in rv.data
+    logout(client)
+
+
+def test_put_user(client):
+    """Try to update user data for existant user"""
+    login(client, app.config['EMAIL'], app.config['PASSWORD'])
+    rv = get_user_by_username(client, app.config['USERNAME'])
+
+    user = json.loads(str(rv.data, encoding='utf-8'))
+    username = user['username']
+    user_id = user['id']
+    rv = put_user(client, user['email'], username, 'Ali', 'Alhazred', '666-666-666', user_id)
+    assert bytes(f'User {username} with id {user_id} has been successfully updated.', encoding='utf-8') in rv.data
+    logout(client)
+
+
+# (client, email, username, first_name, last_name, phone, user_id)
+
+def test_login_logout(client):
+    """Make sure login and logout works."""
+    rv = login(client, app.config['EMAIL'], app.config['PASSWORD'])
+    assert b'You are LOGGED IN as testuser@gmail.com' in rv.data
+
+    rv = smoke(client)
+    assert b'OK' in rv.data
+
+    rv = logout(client)
+    assert b'Dropped' in rv.data
+
+    rv = smoke(client)
+    assert b'You are not allowed to use this resource without logging in!' in rv.data
+
+    rv = login(client, app.config['EMAIL'] + "x", app.config['PASSWORD'])
+    assert b'Could not verify your login!' in rv.data
+
+    rv = login(client, app.config['EMAIL'], app.config['PASSWORD'] + "x")
+    assert b'Could not verify your login!' in rv.data
