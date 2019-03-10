@@ -105,44 +105,66 @@ docker-app.sh
 ## Flask Application Structure 
 
 ```
-
 .
 ├── docker-app.sh
 ├── docker-compose.yml
 ├── docker-deploy.sh
+├── logs
+│   └── Development.log
+├── Pipfile
+├── Procfile
 ├── README.md
+├── requirements.txt
 ├── src
-│   ├── app
-│   │   ├── api.py
-│   │   ├── base.py
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   ├── __init__.py
-│   │   ├── models.py
-│   │   ├── requirements.txt
-│   │   ├── resources.py
-│   │   ├── routes.py
-│   │   ├── scheme.py
-│   │   ├── swagger_models.py
-│   │   └── swagger.yaml
-│   ├── boot.sh
-│   ├── Dockerfile
-│   ├── __init__.py
-│   ├── manage.py
-│   └── tests
-│       ├── __init__.py
-│       ├── requests
-│       │   ├── admin_requests.py
-│       │   ├── basic_requests.py
-│       │   ├── __init__.py
-│       │   ├── login_requests.py
-│       │   └── user_requests.py
-│       ├── test_admin_routes.py
-│       ├── test_basic_routes.py
-│       ├── test_login_routes.py
-│       ├── test_user_passwords.py
-│       ├── test_user_routes.py
-│       └── user_passwords_requests.py
+│   ├── app
+│   │   ├── api.py
+│   │   ├── base.py
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── errors.py
+│   │   ├── __init__.py
+│   │   ├── logger.py
+│   │   ├── marshmallow_schemes.py
+│   │   ├── models.py
+│   │   ├── requirements.txt
+│   │   ├── resources.py
+│   │   ├── routes.py
+│   │   ├── services
+│   │   │   ├── admin.py
+│   │   │   ├── auth.py
+│   │   │   ├── __init__.py
+│   │   │   ├── pagination.py
+│   │   │   ├── password.py
+│   │   │   └── user.py
+│   │   ├── static
+│   │   │   ├── sskey_1.3.png
+│   │   │   └── swagger_sskey.png
+│   │   └── swagger_models.py
+│   ├── boot.sh
+│   ├── Dockerfile
+│   ├── __init__.py
+│   ├── logs
+│   │   └── Development.log
+│   ├── manage.py
+│   ├── sskey_bot
+│   │   ├── __init__.py
+│   │   ├── README.md
+│   │   ├── sskeybot.py
+│   │   └── tg_bot_pagination.py
+│   └── tests
+│       ├── __init__.py
+│       ├── requests
+│       │   ├── admin_requests.py
+│       │   ├── basic_requests.py
+│       │   ├── __init__.py
+│       │   ├── login_requests.py
+│       │   ├── user_passwords_requests.py
+│       │   └── user_requests.py
+│       ├── test_admin_routes.py
+│       ├── test_basic_routes.py
+│       ├── test_login_routes.py
+│       ├── test_user_passwords.py
+│       └── test_user_routes.py
 └── sskey.env
 
 ```
